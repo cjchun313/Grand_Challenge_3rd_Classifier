@@ -8,7 +8,8 @@ from torch import nn
 from torch.utils.data import DataLoader
 
 from data_loader import MelDataset
-from models.modern_cnn import cnn_model
+#from models.modern_cnn import cnn_model
+from models.resnet import ResNet18
 from metrics import compute_confusion_matrix
 from utils import create_folder
 
@@ -29,6 +30,7 @@ def train(model, train_loader, optimizer, epoch):
 
         data = data.to(DEVICE)
         target = target.to(DEVICE)
+        target = torch.squeeze(target)
 
         output = model(data)
 
@@ -64,6 +66,7 @@ def evaluate(model, test_loader):
 
             data = data.to(DEVICE)
             target = target.to(DEVICE)
+            target = torch.squeeze(target)
 
             output = model(data)
 
@@ -73,7 +76,9 @@ def evaluate(model, test_loader):
             prediction = output.max(1, keepdim=True)[1]
             correct += prediction.eq(target.view_as(prediction)).sum().item()
 
-            confusion_matrix += compute_confusion_matrix(target.detach().cpu().numpy(), output.detach().cpu().numpy())
+            #prediction = torch.clamp(prediction, 0, 2)
+            #target = torch.clamp(target, 0, 2)
+            confusion_matrix += compute_confusion_matrix(target.detach().cpu().numpy(), prediction.detach().cpu().numpy())
             #print(confusion_matrix)
 
     test_loss /= len(test_loader.dataset)
@@ -115,10 +120,10 @@ def main(args):
         train_dataloader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=args.shuffle, num_workers=0)
 
         test_dataset = MelDataset(mode='val')
-        test_dataloader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=False, num_workers=0)
+        test_dataloader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=args.shuffle, num_workers=0)
         print(train_dataloader, test_dataloader)
 
-        model = cnn_model()
+        model = ResNet18()
         if torch.cuda.device_count() > 1:
             print('multi gpu used!')
             model = nn.DataParallel(model)
@@ -155,7 +160,7 @@ def main(args):
         test_dataloader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=False, num_workers=0)
         print(test_dataloader)
 
-        model = cnn_model()
+        model = ResNet18()
         if torch.cuda.device_count() > 1:
             print('multi gpu used!')
             model = nn.DataParallel(model)
@@ -178,7 +183,7 @@ if __name__ == '__main__':
     parser.add_argument(
         '--batch_size',
         help='the number of samples in mini-batch',
-        default=256,
+        default=2048,
         type=int)
     parser.add_argument(
         '--epoch',

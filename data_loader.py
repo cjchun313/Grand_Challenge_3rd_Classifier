@@ -20,22 +20,22 @@ class MelDataset(Dataset):
             male_x_data = data['x']
             data_len = len(male_x_data)
 
-            male_y_data = np.array(np.zeros([data_len]) + 0, dtype=np.int32).reshape(-1)  # male : 0
+            male_y_data = np.clip(np.array(np.zeros([data_len]) + 0.0, dtype=np.int32).reshape(-1, 1), 0, 2)  # male : 0
             print(male_x_data.shape, male_y_data.shape)
 
         with np.load(female_filepath) as data:
             female_x_data = data['x']
             data_len = len(female_x_data)
 
-            female_y_data = np.array(np.zeros([data_len]) + 1, dtype=np.int32).reshape(-1)  # female : 1
+            female_y_data = np.clip(np.array(np.zeros([data_len]) + 1.0, dtype=np.int32).reshape(-1, 1), 0, 2)  # female : 1
             print(female_x_data.shape, female_y_data.shape)
 
         with np.load(child_filepath) as data:
             child_x_data = data['x']
             data_len = len(child_x_data)
 
-            child_y_data = np.array(np.zeros([data_len]) + 2, dtype=np.int32).reshape(-1) # child : 2
-            print(child_x_data.shape, child_y_data)
+            child_y_data = np.clip(np.array(np.zeros([data_len]) + 2.0, dtype=np.int32).reshape(-1, 1), 0, 2) # child : 2
+            print(child_x_data.shape, child_y_data.shape)
 
         self.x_data = np.array(np.concatenate((male_x_data, female_x_data, child_x_data), axis=0), dtype=np.float32)
         self.y_data = np.array(np.concatenate((male_y_data, female_y_data, child_y_data), axis=0), dtype=np.int32)
@@ -51,7 +51,7 @@ class MelDataset(Dataset):
 
 
 if __name__ == "__main__":
-    train_dataset = MelDataset(mode='train')
+    train_dataset = MelDataset(mode='val')
     print(train_dataset)
 
     data_loader = DataLoader(train_dataset, batch_size=4, shuffle=False, num_workers=0)
