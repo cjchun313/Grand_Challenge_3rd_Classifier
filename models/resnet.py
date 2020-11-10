@@ -30,7 +30,7 @@ class BasicBlock(nn.Module):
         out = F.relu(self.bn1(self.conv1(x)))
         out = self.bn2(self.conv2(out))
         out += self.shortcut(x)
-        out = F.relu(out)
+        out = F.leaky_relu(out)
         return out
 
 
@@ -54,16 +54,16 @@ class Bottleneck(nn.Module):
             )
 
     def forward(self, x):
-        out = F.relu(self.bn1(self.conv1(x)))
-        out = F.relu(self.bn2(self.conv2(out)))
+        out = F.leaky_relu(self.bn1(self.conv1(x)))
+        out = F.leaky_relu(self.bn2(self.conv2(out)))
         out = self.bn3(self.conv3(out))
         out += self.shortcut(x)
-        out = F.relu(out)
+        out = F.leaky_relu(out)
         return out
 
 
 class ResNet(nn.Module):
-    def __init__(self, block, num_blocks, dropout_rate=0.5, num_classes=3):
+    def __init__(self, block, num_blocks, dropout_rate=0.2, num_classes=3):
         super(ResNet, self).__init__()
         self.in_planes = 16
         #print(block.expansion, num_blocks[0], num_blocks[1], num_blocks[2], num_blocks[3])
@@ -87,7 +87,7 @@ class ResNet(nn.Module):
         return nn.Sequential(*layers)
 
     def forward(self, x):
-        out = F.relu(self.bn1(self.conv1(x)))
+        out = F.leaky_relu(self.bn1(self.conv1(x)))
         out = self.layer1(out)
         out = self.dropout(out)
         out = self.layer2(out)

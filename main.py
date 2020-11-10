@@ -2,7 +2,7 @@ import argparse
 import numpy as np
 
 import torch
-from torch.optim import Adam
+from torch.optim import AdamW
 from torch.optim.lr_scheduler import StepLR
 from torch import nn
 from torch.utils.data import DataLoader
@@ -11,12 +11,12 @@ from data_loader import MelDataset
 #from models.modern_cnn import cnn_model
 from models.resnet import ResNet18
 from metrics import compute_confusion_matrix
-from utils import create_folder
+from utils import create_folder, monte_carlo_dropout
 
 USE_CUDA = torch.cuda.is_available()
 DEVICE = torch.device('cuda' if USE_CUDA else 'cpu')
 
-MODEL_PATH = './pt/classifier/'
+MODEL_PATH = '../pt/classifier/'
 
 
 def train(model, train_loader, optimizer, epoch):
@@ -53,8 +53,10 @@ def train(model, train_loader, optimizer, epoch):
 
 
 
-def evaluate(model, test_loader):
+def evaluate(model, test_loader, mc_dropout=False):
     model.eval()
+    if mc_dropout:
+        model = monte_carlo_dropout(model)
     criterion = nn.CrossEntropyLoss().to(DEVICE)
 
     test_loss = 0
@@ -68,7 +70,12 @@ def evaluate(model, test_loader):
             target = target.to(DEVICE)
             target = torch.squeeze(target)
 
-            output = model(data)
+            total_output = []
+            for i in range(32):
+                output = model(data)
+                total_output.append(output.detach().cpu().numpy())
+            total_output = np.sum(np.array(total_output), axis=0)
+            output = torch.FloatTensor(total_output).to(DEVICE)
 
             loss = criterion(output, target)
             test_loss += loss.item()
@@ -116,10 +123,10 @@ def load_model(modelpath, model, optimizer=None, scheduler=None):
 def main(args):
     # train
     if args.mode == 'train':
-        train_dataset = MelDataset(mode='train')
+        train_dataset = MelDataset(mode='train2')
         train_dataloader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=args.shuffle, num_workers=0)
 
-        test_dataset = MelDataset(mode='val')
+        test_dataset = MelDataset(mode='val2')
         test_dataloader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=args.shuffle, num_workers=0)
         print(train_dataloader, test_dataloader)
 
@@ -130,9 +137,13 @@ def main(args):
         model = model.to(DEVICE)
 
         # set optimizer
-        optimizer = Adam(
+        optimizer = AdamW(
             [param for param in model.parameters() if param.requires_grad], lr=args.lr)
         scheduler = StepLR(optimizer, step_size=10, gamma=0.9)
+
+        # load model
+        #modelpath = MODEL_PATH + 'classifier-model-23-0.000257-69.1498.pt'
+        #load_model(modelpath, model, optimizer=None, scheduler=None)
 
         prev_acc = 0.0
         for epoch in range(args.epoch):
@@ -156,8 +167,8 @@ def main(args):
     elif args.mode == 'evaluate':
         print('mode is evaluation')
 
-        test_dataset = MelDataset(mode='val')
-        test_dataloader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=False, num_workers=0)
+        test_dataset = MelDataset(mode='val2')
+        test_dataloader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=True, num_workers=0)
         print(test_dataloader)
 
         model = ResNet18()
@@ -167,7 +178,7 @@ def main(args):
         model = model.to(DEVICE)
 
         # load model
-        modelpath = MODEL_PATH + 'classifier-model-0-0000000-0000.pt'
+        modelpath = MODEL_PATH + 'classifier-model-117-0.120010-70.4234.pt'
         load_model(modelpath, model, optimizer=None, scheduler=None)
 
         test_loss, test_acc = evaluate(model, test_dataloader)

@@ -8,6 +8,29 @@ import os
 SAMPLING_FREQUENCY = 8000
 SAMPLE_LEN = int(SAMPLING_FREQUENCY * 6.1)
 
+
+
+def freeze_model(model, num_layers=6):
+    ct = 0
+    for child in model.children():
+        if ct < num_layers:
+            for param in child.parameters():
+                param.requires_grad = False
+                # print(ct)
+        ct += 1
+
+    return model
+
+
+def monte_carlo_dropout(model):
+    model.eval()
+    for m in model.modules():
+        if m.__class__.__name__.startswith('Dropout'):
+            m.train()
+
+    return model
+
+
 def read_audio(filepath, target_fs=SAMPLING_FREQUENCY, sample_len=SAMPLE_LEN):
     audio, sr = librosa.load(filepath, sr=target_fs, mono=True)
     audio_len = len(audio)
@@ -56,6 +79,7 @@ def create_npz_dataset(read_path, write_path):
     print('done!')
 
 if __name__ == "__main__":
+    '''
     train_child_filepath = '../db/stereo_after_rir/train/*/*/child/*/*.wav'
     train_male_filepath = '../db/stereo_after_rir/train/*/*/male/*/*.wav'
     train_female_filepath = '../db/stereo_after_rir/train/*/*/female/*/*.wav'
@@ -71,6 +95,7 @@ if __name__ == "__main__":
     create_npz_dataset(val_child_filepath, '../db/stereo_after_rir/val_child_8k_mono.npz')
     create_npz_dataset(val_male_filepath, '../db/stereo_after_rir/val_male_8k_mono.npz')
     create_npz_dataset(val_female_filepath, '../db/stereo_after_rir/val_female_8k_mono.npz')
+    '''
 
     '''
     wavfiles = sorted(glob.glob(filepath))
@@ -79,3 +104,21 @@ if __name__ == "__main__":
         audio, _ = read_audio(wavfile)
         break
     '''
+
+    '''
+    val_child_filepath = '../db/stereo_after_rir/val2/*/*/child/*/*.wav'
+    val_male_filepath = '../db/stereo_after_rir/val2/*/*/male/*/*.wav'
+    val_female_filepath = '../db/stereo_after_rir/val2/*/*/female/*/*.wav'
+
+    create_npz_dataset(val_child_filepath, '../db/stereo_after_rir/val2_child_8k_mono.npz')
+    create_npz_dataset(val_male_filepath, '../db/stereo_after_rir/val2_male_8k_mono.npz')
+    create_npz_dataset(val_female_filepath, '../db/stereo_after_rir/val2_female_8k_mono.npz')
+    '''
+
+    train2_child_filepath = '../db/stereo_after_rir/train2/*/*/child/*/*.wav'
+    train2_male_filepath = '../db/stereo_after_rir/train2/*/*/male/*/*.wav'
+    train2_female_filepath = '../db/stereo_after_rir/train2/*/*/female/*/*.wav'
+
+    create_npz_dataset(train2_child_filepath, '../db/stereo_after_rir/train2_child_8k_mono.npz')
+    create_npz_dataset(train2_male_filepath, '../db/stereo_after_rir/train2_male_8k_mono.npz')
+    create_npz_dataset(train2_female_filepath, '../db/stereo_after_rir/train2_female_8k_mono.npz')

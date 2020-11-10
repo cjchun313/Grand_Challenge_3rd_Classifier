@@ -11,10 +11,18 @@ class MelDataset(Dataset):
             child_filepath = NPZ_PATH + 'train_child_8k_mono.npz'
             male_filepath = NPZ_PATH + 'train_male_8k_mono.npz'
             female_filepath = NPZ_PATH + 'train_female_8k_mono.npz'
+        elif mode == 'train2':
+            child_filepath = NPZ_PATH + 'train2_child_8k_mono.npz'
+            male_filepath = NPZ_PATH + 'train2_male_8k_mono.npz'
+            female_filepath = NPZ_PATH + 'train2_female_8k_mono.npz'
         elif mode == 'val':
             child_filepath = NPZ_PATH + 'val_child_8k_mono.npz'
             male_filepath = NPZ_PATH + 'val_male_8k_mono.npz'
             female_filepath = NPZ_PATH + 'val_female_8k_mono.npz'
+        elif mode == 'val2':
+            child_filepath = NPZ_PATH + 'val2_child_8k_mono.npz'
+            male_filepath = NPZ_PATH + 'val2_male_8k_mono.npz'
+            female_filepath = NPZ_PATH + 'val2_female_8k_mono.npz'
 
         with np.load(male_filepath) as data:
             male_x_data = data['x']
